@@ -27,11 +27,11 @@ contract DeployRobinhood is Script {
         MockPriceFeed priceFeed = new MockPriceFeed();
 
         // Set prices for RH testnet tokens (8 decimals)
-        priceFeed.setPrice(cfg.tsla, 267_00000000);
-        priceFeed.setPrice(cfg.amzn, 2090_00000000);
-        priceFeed.setPrice(cfg.amd,  115_00000000);
-        priceFeed.setPrice(cfg.nflx, 980_00000000);
-        priceFeed.setPrice(cfg.pltr, 96_00000000);
+        priceFeed.setPrice(cfg.tsla, 405_00000000);
+        priceFeed.setPrice(cfg.amzn, 205_00000000);
+        priceFeed.setPrice(cfg.amd,  102_00000000);
+        priceFeed.setPrice(cfg.nflx, 990_00000000);
+        priceFeed.setPrice(cfg.pltr, 157_00000000);
 
         // Set volatilities (basis points)
         priceFeed.setVolatility(cfg.tsla, 2000);

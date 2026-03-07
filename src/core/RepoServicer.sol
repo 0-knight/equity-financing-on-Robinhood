@@ -282,6 +282,16 @@ contract RepoServicer is Ownable {
         emit RepoSettled(repoId, netPayment);
     }
 
+    /// @notice DEBUG ONLY — force maturity for demo
+    function debugSetMaturity(uint256 repoId, uint256 newMaturity) external onlyOwner {
+   	 repos[repoId].maturityDate = newMaturity;
+    }
+
+    /// @notice DEBUG ONLY — force state for demo
+    function debugSetState(uint256 repoId, RepoTypes.RepoState newState) external onlyOwner {
+    	repos[repoId].state = newState;
+    }
+
     // ═══════════════════════════════════════════
     //  REHYPOTHECATION
     // ═══════════════════════════════════════════
