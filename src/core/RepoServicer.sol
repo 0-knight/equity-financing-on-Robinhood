@@ -292,6 +292,11 @@ contract RepoServicer is Ownable {
     	repos[repoId].state = newState;
     }
 
+    /// @notice DEBUG ONLY — force start date for demo
+    function debugSetStartDate(uint256 repoId, uint256 newStart) external onlyOwner {
+        repos[repoId].startDate = newStart;
+    }
+
     // ═══════════════════════════════════════════
     //  REHYPOTHECATION
     // ═══════════════════════════════════════════

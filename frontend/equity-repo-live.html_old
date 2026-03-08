@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Repo Protocol — Equity Financing</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
+<style>
+:root {
+  --bg: #0a0a0a; --surface: #141414; --surface2: #1c1c1c; --surface3: #242424;
+  --border: #2a2a2a; --border2: #333;
+  --text: #f0f0f0; --text2: #999; --text3: #666;
+  --green: #00c853; --green-dim: #00c85322;
+  --red: #ff3b30; --red-dim: #ff3b3022;
+  --blue: #4a9eff; --blue-dim: #4a9eff22;
+  --yellow: #ffb800; --yellow-dim: #ffb80022;
+  --purple: #a855f7; --purple-dim: #a855f722;
+  --font: 'DM Sans', -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --radius: 12px; --radius-sm: 8px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:var(--font); background:var(--bg); color:var(--text); min-height:100vh; }
+
+.nav { display:flex; align-items:center; justify-content:space-between; padding:16px 24px; border-bottom:1px solid var(--border); background:var(--surface); position:sticky; top:0; z-index:100; }
+.nav-logo { font-size:18px; font-weight:700; letter-spacing:-0.5px; }
+.nav-logo span { color:var(--green); }
+.nav-role { display:flex; gap:4px; background:var(--surface2); border-radius:20px; padding:3px; }
+.nav-role button { padding:6px 16px; border-radius:18px; border:none; font-family:var(--font); font-size:13px; font-weight:500; cursor:pointer; transition:all 0.2s; background:transparent; color:var(--text3); }
+.nav-role button.active { background:var(--green); color:#000; }
+.nav-role button:disabled { opacity:0.3; cursor:not-allowed; }
+.nav-wallet { display:flex; align-items:center; gap:8px; }
+.nav-wallet-addr { font-family:var(--mono); font-size:12px; color:var(--text3); background:var(--surface2); padding:6px 12px; border-radius:20px; }
+.nav-wallet-role { font-size:11px; color:var(--green); font-weight:600; }
+
+.screen { display:none; padding:24px; max-width:1200px; margin:0 auto; }
+.screen.active { display:block; animation:fadeIn 0.3s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+.section-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+.section-title { font-size:24px; font-weight:700; letter-spacing:-0.5px; }
+.section-subtitle { font-size:14px; color:var(--text2); margin-top:4px; }
+
+.card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin-bottom:16px; transition:border-color 0.2s; }
+.card:hover { border-color:var(--border2); }
+.card-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; }
+
+.holding { background:var(--surface2); border-radius:var(--radius-sm); padding:16px; display:flex; flex-direction:column; gap:8px; border:1px solid var(--border); }
+.holding-ticker { font-family:var(--mono); font-size:15px; font-weight:600; }
+.holding-name { font-size:12px; color:var(--text3); }
+.holding-shares { font-size:20px; font-weight:700; }
+.holding-value { font-size:13px; color:var(--text2); }
+
+.btn { padding:10px 20px; border-radius:20px; border:none; font-family:var(--font); font-size:14px; font-weight:600; cursor:pointer; transition:all 0.2s; }
+.btn-primary { background:var(--green); color:#000; }
+.btn-primary:hover { filter:brightness(1.1); }
+.btn-secondary { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
+.btn-secondary:hover { border-color:var(--text3); }
+.btn-sm { padding:6px 14px; font-size:12px; }
+.btn-block { width:100%; }
+.btn:disabled { opacity:0.3; cursor:not-allowed; }
+.btn.loading { position:relative; color:transparent; }
+.btn.loading::after { content:"⏳"; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); color:#000; }
+
+.basket-row { display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--border); }
+.basket-row:last-child { border-bottom:none; }
+.basket-check { width:20px; height:20px; accent-color:var(--green); cursor:pointer; }
+.basket-ticker { font-family:var(--mono); font-size:14px; font-weight:600; width:60px; }
+.basket-price { font-size:13px; color:var(--text2); width:100px; font-family:var(--mono); }
+.basket-input { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 12px; color:var(--text); font-family:var(--mono); font-size:14px; width:100px; outline:none; }
+.basket-input:focus { border-color:var(--green); }
+.basket-subtotal { font-size:13px; color:var(--text2); margin-left:auto; font-family:var(--mono); }
+.basket-available { font-size:11px; color:var(--text3); width:80px; }
+
+.summary { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin-top:16px; }
+.summary-row { display:flex; justify-content:space-between; padding:8px 0; font-size:14px; }
+.summary-row .label { color:var(--text2); }
+.summary-row .value { font-weight:600; font-family:var(--mono); }
+.summary-row.highlight .value { color:var(--green); font-size:18px; }
+.summary-divider { height:1px; background:var(--border); margin:8px 0; }
+
+.lender-card { display:flex; align-items:center; gap:16px; padding:16px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); margin-bottom:8px; cursor:pointer; transition:all 0.2s; }
+.lender-card:hover { border-color:var(--green); background:var(--surface3); }
+.lender-card.selected { border-color:var(--green); background:var(--green-dim); }
+.lender-avatar { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; color:#000; }
+.lender-info { flex:1; }
+.lender-name { font-weight:600; font-size:14px; }
+.lender-detail { font-size:12px; color:var(--text3); margin-top:2px; }
+
+.repo-status { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:12px; font-size:12px; font-weight:600; }
+.repo-status.active { background:var(--green-dim); color:var(--green); }
+.repo-status.margin { background:var(--red-dim); color:var(--red); }
+.repo-status.matured { background:var(--blue-dim); color:var(--blue); }
+.repo-status.settled { background:var(--purple-dim); color:var(--purple); }
+.status-dot { width:6px; height:6px; border-radius:50%; background:currentColor; }
+
+.gauge-container { height:8px; background:var(--surface3); border-radius:4px; overflow:hidden; margin:8px 0; }
+.gauge-fill { height:100%; border-radius:4px; transition:width 0.5s ease; }
+
+.timeline-item { display:flex; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); font-size:13px; }
+.timeline-dot { width:8px; height:8px; border-radius:50%; margin-top:5px; flex-shrink:0; }
+.timeline-time { color:var(--text3); font-family:var(--mono); font-size:11px; margin-top:2px; }
+
+.input-group { margin-bottom:14px; }
+.input-label { font-size:12px; color:var(--text3); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; }
+.input-field { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 14px; color:var(--text); font-family:var(--font); font-size:14px; outline:none; }
+.input-field:focus { border-color:var(--green); }
+
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:150; display:flex; align-items:center; justify-content:center; }
+.modal { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; width:90%; max-width:480px; }
+.modal-title { font-size:18px; font-weight:700; margin-bottom:16px; }
+
+.toast { position:fixed; bottom:24px; right:24px; padding:14px 20px; border-radius:var(--radius-sm); font-size:14px; font-weight:500; z-index:200; animation:slideUp 0.3s ease,fadeOut 0.3s ease 2.7s forwards; display:flex; align-items:center; gap:8px; max-width:500px; }
+.toast.success { background:var(--green); color:#000; }
+.toast.warning { background:var(--yellow); color:#000; }
+.toast.danger { background:var(--red); color:#fff; }
+@keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+@keyframes fadeOut { to{opacity:0} }
+
+.rehypo-cap { display:flex; align-items:center; gap:8px; padding:10px 14px; background:var(--yellow-dim); border:1px solid #ffb80033; border-radius:var(--radius-sm); font-size:13px; color:var(--yellow); margin:12px 0; }
+
+.connect-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:80vh; gap:16px; }
+.connect-screen h1 { font-size:32px; font-weight:700; }
+.connect-screen p { color:var(--text2); }
+
+.steps { display:flex; gap:8px; margin-bottom:24px; }
+.step { flex:1; height:3px; background:var(--surface3); border-radius:2px; }
+.step.done { background:var(--green); }
+.step.current { background:var(--green); opacity:0.5; }
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="nav" id="main-nav" style="display:none">
+  <div class="nav-logo">Repo<span>.</span>Protocol</div>
+  <div class="nav-role" id="nav-roles"></div>
+  <div class="nav-wallet">
+    <button class="btn btn-sm" style="background:var(--yellow);color:#000;font-size:11px;" onclick="toggleControlPanel()">⚙ Control</button>
+    <div>
+      <div class="nav-wallet-role" id="wallet-role">—</div>
+      <div class="nav-wallet-addr" id="wallet-addr">—</div>
+    </div>
+  </div>
+</nav>
+
+<!-- Connect Screen -->
+<div id="connect-screen" class="connect-screen">
+  <h1>Repo<span style="color:var(--green)">.</span>Protocol</h1>
+  <p>Equity Financing on Robinhood Chain</p>
+  <button class="btn btn-primary" style="font-size:16px;padding:14px 32px;" onclick="connectWallet()">Connect MetaMask</button>
+  <p style="font-size:12px;color:var(--text3);">Robinhood Chain Testnet required</p>
+</div>
+
+<!-- Control Panel -->
+<div id="control-panel" style="display:none;position:fixed;top:60px;right:16px;width:320px;background:var(--surface);border:1px solid var(--yellow);border-radius:var(--radius);padding:16px;z-index:120;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+    <div style="font-size:14px;font-weight:700;color:var(--yellow);">⚙ Demo Control Panel</div>
+    <button onclick="toggleControlPanel()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;">✕</button>
+  </div>
+  <div style="font-size:11px;color:var(--text3);margin-bottom:14px;">Simulate on-chain events (owner only)</div>
+
+  <div style="margin-bottom:12px;">
+    <div class="input-label">Price Simulation</div>
+    <div id="price-controls" style="display:flex;flex-direction:column;gap:6px;"></div>
+  </div>
+
+  <div style="border-top:1px solid var(--border);padding-top:12px;margin-bottom:12px;">
+    <div class="input-label">Dividend Event</div>
+    <div style="display:flex;gap:6px;">
+      <select id="div-ticker" class="input-field" style="flex:1;font-size:12px;padding:6px 8px;"></select>
+      <input type="text" id="div-amount" class="input-field" value="2.50" style="width:70px;font-size:12px;padding:6px 8px;font-family:var(--mono);">
+      <button class="btn btn-sm btn-primary" onclick="triggerDividend()" style="padding:6px 12px;font-size:11px;">Pay</button>
+    </div>
+  </div>
+
+  <div style="border-top:1px solid var(--border);padding-top:12px;">
+    <div class="input-label">Time Warp (Set Maturity to Now)</div>
+    <div style="display:flex;gap:6px;margin-bottom:6px;">
+      <button class="btn btn-sm" onclick="warpMaturity(2)" style="flex:1;font-size:11px;background:var(--purple);color:#fff;">Rehypo → Mature</button>
+      <button class="btn btn-sm" onclick="warpMaturity(1)" style="flex:1;font-size:11px;background:var(--red);color:#fff;">Base → Mature</button>
+    </div>
+    <div style="font-size:11px;color:var(--text3);">Sets maturity to current block timestamp</div>
+  </div>
+</div>
+
+<!-- ══════════ PB: Portfolio ══════════ -->
+<div id="pb-portfolio" class="screen">
+  <div class="section-header">
+    <div>
+      <div class="section-title">Portfolio</div>
+      <div class="section-subtitle">Your tokenized securities on Robinhood Chain</div>
+    </div>
+    <button class="btn btn-primary" onclick="showScreen('pb-basket')">＋ New Financing</button>
+  </div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div>
+        <div style="font-size:13px;color:var(--text3);">Total Portfolio Value</div>
+        <div style="font-size:28px;font-weight:700;font-family:var(--mono);margin-top:4px;" id="total-portfolio">—</div>
+      </div>
+      <div>
+        <div style="font-size:13px;color:var(--text3);">Available USDC</div>
+        <div style="font-size:20px;font-weight:700;font-family:var(--mono);margin-top:4px;color:var(--green);" id="usdc-balance">—</div>
+      </div>
+    </div>
+    <div class="card-grid" id="holdings-grid"></div>
+  </div>
+
+  <div class="section-header" style="margin-top:24px">
+    <div class="section-title" style="font-size:18px;">Active Financing</div>
+  </div>
+  <div id="active-financing"></div>
+</div>
+
+<!-- ══════════ PB: Basket Builder ══════════ -->
+<div id="pb-basket" class="screen">
+  <div class="steps"><div class="step done"></div><div class="step current"></div><div class="step"></div><div class="step"></div></div>
+  <div class="section-header">
+    <div>
+      <div class="section-title">Create Basket</div>
+      <div class="section-subtitle">Select securities and quantities for your collateral basket</div>
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="showScreen('pb-portfolio')">← Back</button>
+  </div>
+  <div class="card" id="basket-builder"></div>
+  <div class="summary" id="basket-summary"></div>
+  <div style="display:flex;gap:12px;margin-top:16px;">
+    <div class="input-group" style="flex:1">
+      <div class="input-label">Repo Rate (bps, e.g. 480=4.80%)</div>
+      <input type="number" class="input-field" id="repo-rate" value="480" style="font-family:var(--mono)">
+    </div>
+    <div class="input-group" style="flex:1">
+      <div class="input-label">Borrow Amount (USDC)</div>
+      <input type="number" class="input-field" id="borrow-amount" value="1000" style="font-family:var(--mono)">
+    </div>
+  </div>
+  <button class="btn btn-primary btn-block" style="margin-top:16px;" onclick="showScreen('pb-market')">Continue to Market →</button>
+</div>
+
+<!-- ══════════ PB: Market ══════════ -->
+<div id="pb-market" class="screen">
+  <div class="steps"><div class="step done"></div><div class="step done"></div><div class="step current"></div><div class="step"></div></div>
+  <div class="section-header">
+    <div>
+      <div class="section-title">Select Lender</div>
+      <div class="section-subtitle">Choose a cash lender for your financing</div>
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="showScreen('pb-basket')">← Back</button>
+  </div>
+  <div id="lender-list"></div>
+  <button class="btn btn-primary btn-block" style="margin-top:16px;" id="propose-btn" disabled onclick="proposeRepo()">Select a Lender to Continue</button>
+</div>
+
+<!-- ══════════ PB: Dashboard ══════════ -->
+<div id="pb-dashboard" class="screen">
+  <div class="section-header">
+    <div>
+      <div class="section-title" id="dash-title">Repo #—</div>
+      <div class="section-subtitle" id="dash-subtitle">—</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="btn btn-secondary btn-sm" onclick="showScreen('pb-portfolio')">← Back</button>
+      <div class="repo-status" id="dash-status"><span class="status-dot"></span> —</div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div class="card"><div style="font-size:13px;color:var(--text3);margin-bottom:12px;">Collateral Basket</div><div id="dash-basket"></div></div>
+    <div class="card"><div style="font-size:13px;color:var(--text3);margin-bottom:12px;">Financing Terms</div><div id="dash-terms"></div></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <div style="font-size:13px;color:var(--text3);">Margin Health</div>
+      <div style="font-size:14px;font-weight:600;" id="dash-health-pct">—</div>
+    </div>
+    <div class="gauge-container"><div class="gauge-fill" id="dash-gauge" style="width:0%;"></div></div>
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-top:4px;">
+      <span>⚠ Liquidation 20%</span><span>⚠ Margin Call 40%</span><span>✓ Healthy 60%+</span>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <div style="font-size:13px;color:var(--text3);margin-bottom:12px;">Event Timeline</div>
+    <div id="dash-timeline"></div>
+  </div>
+  <div style="display:flex;gap:12px;margin-top:16px;" id="dash-actions">
+    <button class="btn btn-secondary" id="topup-btn" disabled style="opacity:0.3;" onclick="showTopUpModal()">Top Up Collateral</button>
+    <button class="btn btn-primary" id="settle-btn" disabled style="margin-left:auto;opacity:0.3;" onclick="showSettlementModal()">Settle (at maturity)</button>
+  </div>
+</div>
+
+<!-- ══════════ CL: Inbox ══════════ -->
+<div id="cl-inbox" class="screen">
+  <div class="section-header">
+    <div>
+      <div class="section-title">Financing Requests</div>
+      <div class="section-subtitle">Incoming repo proposals</div>
+    </div>
+  </div>
+  <div id="cl-proposals"></div>
+</div>
+
+<!-- ══════════ CL: Portfolio ══════════ -->
+<div id="cl-portfolio" class="screen">
+  <div class="section-header">
+    <div>
+      <div class="section-title">My Positions</div>
+      <div class="section-subtitle">Active repos and RepoTokens</div>
+    </div>
+  </div>
+  <div id="cl-positions"></div>
+</div>
+
+<!-- ══════════ CL2: Inbox ══════════ -->
+<div id="cl2-inbox" class="screen">
+  <div class="section-header">
+    <div>
+      <div class="section-title">Rehypo Requests</div>
+      <div class="section-subtitle">Incoming rehypothecation proposals</div>
+    </div>
+  </div>
+  <div id="cl2-proposals"></div>
+</div>
+
+<!-- ══════════ CL2: Portfolio ══════════ -->
+<div id="cl2-portfolio" class="screen">
+  <div class="section-header">
+    <div>
+      <div class="section-title">My Positions</div>
+      <div class="section-subtitle">Rehypo positions</div>
+    </div>
+  </div>
+  <div id="cl2-positions"></div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// CONFIG
+// ════════════════════════════════════════
+const C = {
+  rpc: "https://rpc.testnet.chain.robinhood.com/",
+  chainId: 46630,
+  TSLA:"0xC9f9c86933092BbbfFF3CCb4b105A4A94bf3Bd4E",
+  AMZN:"0x5884aD2f920c162CFBbACc88C9C51AA75eC09E02",
+  AMD:"0x71178BAc73cBeb415514eB542a8995b82669778d",
+  NFLX:"0x3b8262A63d25f0477c4DDE23F83cfe22Cb768C93",
+  PLTR:"0x1FBE1a0e43594b3455993B5dE5Fd0A7A266298d0",
+  USDC:"0x2490329a6c4b8FB76dA3949A58F4d5A5DA084196",
+  PriceFeed:"0x862EA42EF2A6E2Ecc6F14A2Fd8C75CaC0960f7f5",
+  BasketManager:"0xecA4c967c0E67b5FB5d97b5703f3B68e8beb7277",
+  RepoToken:"0xfa8209cD0DD34B9bB434DB0D4c979D2166032203",
+  RepoMarket:"0xE57afa43F0AAf01b7974463f20eb84E8028501E6",
+  RepoServicer:"0xa6171F5C434f5EA5135fBc24Eb92bbd6D530af06",
+  wallets:{
+    "0x0d781453255a7dbdf7f431cbcb956733173898b5":"Prime Broker",
+    "0x3fb2d86389bea9f673f6fc9d9fd4ae549a2f2eb1":"Citadel Capital",
+    "0x6f217c0ba23d54330e38a9ee917455659e4d597d":"Jupiter MMF",
+  },
+  securities: null, // set in init
+};
+C.securities = [
+  {addr:C.TSLA,symbol:"TSLA",name:"Tesla, Inc."},
+  {addr:C.AMZN,symbol:"AMZN",name:"Amazon.com"},
+  {addr:C.AMD,symbol:"AMD",name:"AMD, Inc."},
+  {addr:C.NFLX,symbol:"NFLX",name:"Netflix, Inc."},
+  {addr:C.PLTR,symbol:"PLTR",name:"Palantir Tech."},
+];
+
+const ABI_ERC20=["function balanceOf(address) view returns (uint256)","function approve(address,uint256)","function allowance(address,address) view returns (uint256)"];
+const ABI_PF=["function getPrice(address) view returns (uint256)","function setPrice(address,uint256)","function getBasketValue(address[],uint256[]) view returns (uint256)"];
+const ABI_BM=["function createBasket(address[],uint256[]) returns (uint256)","function getBasket(uint256) view returns (address[],uint256[],address)","function getBasketValue(uint256) view returns (uint256)","function calculateParams(address[],uint256[]) view returns (uint256,uint256,uint256)","function nextBasketId() view returns (uint256)"];
+const ABI_RS=["function proposeRepo(uint256,uint256,uint256,uint256,address) returns (uint256)","function acceptRepo(uint256)","function distributeDividend(uint256,address,uint256)","function checkMargin(uint256)","function topUpCollateral(uint256,address,uint256)","function checkMaturity(uint256)","function settleRepo(uint256)","function proposeRehypo(uint256,uint256,uint256,uint256,address) returns (uint256)","function acceptRehypo(uint256)","function settleRehypo(uint256)","function debugSetMaturity(uint256,uint256)","function getRepoState(uint256) view returns (uint8)","function getRepoTerms(uint256) view returns (uint256,uint256,uint256,uint256)","function calculateAccruedInterest(uint256) view returns (uint256)","function getMfgPaymentCredit(uint256) view returns (uint256)","function calculateSettlement(uint256) view returns (uint256,uint256,uint256,uint256)","function getMarginHealth(uint256) view returns (uint256)","function getMaturityDate(uint256) view returns (uint256)","function getRehypoCap(uint256) view returns (uint256)","function getReposByBorrower(address) view returns (uint256[])","function getReposByLender(address) view returns (uint256[])","function nextRepoId() view returns (uint256)"];
+const ABI_RT=["function ownerOf(uint256) view returns (address)","function getRepoTokenInfo(uint256) view returns (tuple(uint256,uint256,uint256,uint256,uint256,uint8,uint256,bool))","function isRehypoAvailable(uint256) view returns (bool)","function nextTokenId() view returns (uint256)","function setApprovalForAll(address,bool)","function isApprovedForAll(address,address) view returns (bool)"];
+const ABI_MKT=["function registerLender(uint256,uint256)","function getActiveLenders() view returns (address[])","function getLenderTerms(address) view returns (uint256,uint256)","function getLenderStats(address) view returns (uint256,uint256)","function getProposalsForLender(address) view returns (uint256[])"];
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+let provider, signer, userAddr, userRole;
+let contracts = {};
+let currentBasketTokens = [];
+let currentBasketAmounts = [];
+let currentBasketId = 0;
+let selectedLender = null;
+let baseRepoId = 0;
+let rehypoRepoId = 0;
+let timelineEvents = [];
+
+const STATES = ['Proposed','Active','MarginCalled','Matured','Settled','Liquidated'];
+const STATE_CLASS = ['','active','margin','matured','settled','settled'];
+
+// ════════════════════════════════════════
+// WALLET CONNECTION
+// ════════════════════════════════════════
+async function connectWallet() {
+  if (!window.ethereum) { alert('MetaMask required'); return; }
+  try {
+    provider = new ethers.BrowserProvider(window.ethereum);
+    const network = await provider.getNetwork();
+    if (Number(network.chainId) !== C.chainId) {
+      try {
+        await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x'+C.chainId.toString(16)}]});
+      } catch(e) {
+        await window.ethereum.request({method:'wallet_addEthereumChain',params:[{chainId:'0x'+C.chainId.toString(16),chainName:'Robinhood Chain Testnet',rpcUrls:[C.rpc],nativeCurrency:{name:'ETH',symbol:'ETH',decimals:18}}]});
+      }
+      provider = new ethers.BrowserProvider(window.ethereum);
+    }
+    signer = await provider.getSigner();
+    userAddr = (await signer.getAddress()).toLowerCase();
+    userRole = C.wallets[userAddr] || 'Unknown';
+
+    // Init contracts
+    contracts.priceFeed = new ethers.Contract(C.PriceFeed, ABI_PF, signer);
+    contracts.basketMgr = new ethers.Contract(C.BasketManager, ABI_BM, signer);
+    contracts.servicer = new ethers.Contract(C.RepoServicer, ABI_RS, signer);
+    contracts.repoToken = new ethers.Contract(C.RepoToken, ABI_RT, signer);
+    contracts.market = new ethers.Contract(C.RepoMarket, ABI_MKT, signer);
+    contracts.usdc = new ethers.Contract(C.USDC, ABI_ERC20, signer);
+
+    document.getElementById('connect-screen').style.display = 'none';
+    document.getElementById('main-nav').style.display = 'flex';
+    document.getElementById('wallet-addr').textContent = userAddr.slice(0,6)+'...'+userAddr.slice(-4);
+    document.getElementById('wallet-role').textContent = userRole;
+
+    buildNavRoles();
+    await navigateToRole();
+
+    // Listen for account changes
+    window.ethereum.on('accountsChanged', async (accts) => {
+      userAddr = accts[0].toLowerCase();
+      userRole = C.wallets[userAddr] || 'Unknown';
+      document.getElementById('wallet-addr').textContent = userAddr.slice(0,6)+'...'+userAddr.slice(-4);
+      document.getElementById('wallet-role').textContent = userRole;
+      signer = await provider.getSigner();
+      // Reinit contracts with new signer
+      contracts.priceFeed = new ethers.Contract(C.PriceFeed, ABI_PF, signer);
+      contracts.basketMgr = new ethers.Contract(C.BasketManager, ABI_BM, signer);
+      contracts.servicer = new ethers.Contract(C.RepoServicer, ABI_RS, signer);
+      contracts.repoToken = new ethers.Contract(C.RepoToken, ABI_RT, signer);
+      contracts.market = new ethers.Contract(C.RepoMarket, ABI_MKT, signer);
+      contracts.usdc = new ethers.Contract(C.USDC, ABI_ERC20, signer);
+      buildNavRoles();
+      await navigateToRole();
+    });
+
+  } catch(e) { console.error(e); toast('Connection failed: '+e.message,'danger'); }
+}
+
+function buildNavRoles() {
+  const nav = document.getElementById('nav-roles');
+  nav.innerHTML = '';
+  Object.entries(C.wallets).forEach(([addr, name]) => {
+    const btn = document.createElement('button');
+    btn.textContent = name;
+    btn.className = addr === userAddr ? 'active' : '';
+    btn.disabled = addr !== userAddr;
+    if (addr !== userAddr) btn.style.opacity = '0.3';
+    nav.appendChild(btn);
+  });
+}
+
+async function navigateToRole() {
+  if (userRole === 'Prime Broker') {
+    await loadPBPortfolio();
+    showScreen('pb-portfolio');
+  } else if (userRole === 'Citadel Capital') {
+    await loadCLView();
+  } else if (userRole === 'Jupiter MMF') {
+    await loadCL2View();
+  }
+  initControlPanel();
+}
+
+// ════════════════════════════════════════
+// SCREEN NAV
+// ════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ════════════════════════════════════════
+// PB: PORTFOLIO
+// ════════════════════════════════════════
+async function loadPBPortfolio() {
+  const grid = document.getElementById('holdings-grid');
+  grid.innerHTML = '<div style="color:var(--text3)">Loading...</div>';
+  let totalVal = 0n;
+
+  let html = '';
+  for (const sec of C.securities) {
+    const token = new ethers.Contract(sec.addr, ABI_ERC20, provider);
+    const bal = await token.balanceOf(userAddr);
+    const price = await contracts.priceFeed.getPrice(sec.addr);
+    const shares = Number(ethers.formatEther(bal));
+    const priceUsd = Number(price) / 1e8;
+    const value = shares * priceUsd;
+    totalVal += BigInt(Math.round(value * 1e6));
+
+    html += `<div class="holding">
+      <div class="holding-ticker">${sec.symbol}</div>
+      <div class="holding-name">${sec.name}</div>
+      <div class="holding-shares">${shares} shares</div>
+      <div class="holding-value">$${value.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+      <div style="font-size:12px;color:var(--text3);">$${priceUsd.toFixed(2)}/share</div>
+    </div>`;
+  }
+  grid.innerHTML = html;
+
+  // USDC
+  const usdcBal = await contracts.usdc.balanceOf(userAddr);
+  const usdcNum = Number(ethers.formatUnits(usdcBal, 6));
+  document.getElementById('usdc-balance').textContent = '$'+usdcNum.toLocaleString('en-US',{minimumFractionDigits:2});
+  document.getElementById('total-portfolio').textContent = '$'+(Number(totalVal)/1e6).toLocaleString('en-US',{minimumFractionDigits:2});
+
+  // Active repos
+  await loadActiveFinancing();
+  // Build basket page
+  await buildBasketBuilder();
+}
+
+async function loadActiveFinancing() {
+  const div = document.getElementById('active-financing');
+  try {
+    const repoIds = await contracts.servicer.getReposByBorrower(userAddr);
+    if (repoIds.length === 0) {
+      div.innerHTML = '<div class="card" style="text-align:center;padding:32px;color:var(--text3);"><div>No active repos</div><div style="font-size:12px;margin-top:4px;">Create a basket and request financing to get started</div></div>';
+      return;
+    }
+    let html = '';
+    for (const id of repoIds) {
+      const state = Number(await contracts.servicer.getRepoState(id));
+      const [principal, rate, maturity, basketId] = await contracts.servicer.getRepoTerms(id);
+      let health = 0;
+      try { health = Number(await contracts.servicer.getMarginHealth(id)); } catch(e) {}
+
+      html += `<div class="card" style="cursor:pointer" onclick="openDashboard(${id})">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:14px;font-weight:600;">Repo #${id}</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:4px;">Principal: $${Number(ethers.formatUnits(principal,6)).toLocaleString()} · ${Number(rate)/100}% rate</div>
+          </div>
+          <div class="repo-status ${STATE_CLASS[state]}"><span class="status-dot"></span> ${STATES[state]}</div>
+        </div>
+        ${state < 4 ? `<div class="gauge-container" style="margin-top:12px"><div class="gauge-fill" style="width:${Math.min(100,health/100)}%;background:${health<4000?'var(--red)':health<6000?'var(--yellow)':'var(--green)'}"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text3);"><span>Margin: ${(health/100).toFixed(1)}%</span></div>` : ''}
+      </div>`;
+    }
+    div.innerHTML = html;
+  } catch(e) { div.innerHTML = '<div class="card" style="color:var(--text3);">Error loading repos</div>'; }
+}
+
+// ════════════════════════════════════════
+// PB: BASKET BUILDER
+// ════════════════════════════════════════
+async function buildBasketBuilder() {
+  const div = document.getElementById('basket-builder');
+  let html = `<div class="basket-row" style="border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:4px;">
+    <div style="width:20px"></div><div class="basket-ticker" style="color:var(--text3);font-size:12px;">TICKER</div>
+    <div class="basket-price" style="color:var(--text3);font-size:12px;">PRICE</div>
+    <div class="basket-available" style="color:var(--text3);font-size:12px;">AVAILABLE</div>
+    <div style="color:var(--text3);font-size:12px;width:100px;">SHARES</div>
+    <div class="basket-subtotal" style="color:var(--text3);font-size:12px;">SUBTOTAL</div>
+  </div>`;
+
+  for (const sec of C.securities) {
+    const token = new ethers.Contract(sec.addr, ABI_ERC20, provider);
+    const bal = await token.balanceOf(userAddr);
+    const price = await contracts.priceFeed.getPrice(sec.addr);
+    const shares = Number(ethers.formatEther(bal));
+    const priceUsd = Number(price) / 1e8;
+
+    html += `<div class="basket-row" data-addr="${sec.addr}" data-price="${priceUsd}" data-max="${shares}">
+      <input type="checkbox" class="basket-check" onchange="updateBasketSummary()">
+      <div class="basket-ticker">${sec.symbol}</div>
+      <div class="basket-price">$${priceUsd.toFixed(2)}</div>
+      <div class="basket-available">${shares} avail</div>
+      <input type="number" class="basket-input" value="0" min="0" max="${shares}" placeholder="0" onchange="updateBasketSummary()" oninput="updateBasketSummary()">
+      <div class="basket-subtotal">—</div>
+    </div>`;
+  }
+  div.innerHTML = html;
+  updateBasketSummary();
+}
+
+async function updateBasketSummary() {
+  const rows = document.querySelectorAll('#basket-builder .basket-row[data-addr]');
+  let tokens = [], amounts = [], totalValue = 0, checkedCount = 0;
+
+  rows.forEach(row => {
+    const checked = row.querySelector('.basket-check').checked;
+    const shares = parseInt(row.querySelector('.basket-input').value) || 0;
+    const price = parseFloat(row.dataset.price);
+    const sub = row.querySelector('.basket-subtotal');
+
+    if (checked && shares > 0) {
+      const val = shares * price;
+      sub.textContent = '$' + val.toLocaleString('en-US',{minimumFractionDigits:2});
+      totalValue += val;
+      checkedCount++;
+      tokens.push(row.dataset.addr);
+      amounts.push(shares);
+    } else {
+      sub.textContent = '—';
+    }
+  });
+
+  currentBasketTokens = tokens;
+  currentBasketAmounts = amounts;
+
+  // Calculate params from contract if we have tokens
+  let haircut = 0, maxBorrow = 0, divBonus = 0;
+  if (tokens.length > 0) {
+    try {
+      const amountsBN = amounts.map(a => ethers.parseEther(a.toString()));
+      const [h, m, mb] = await contracts.basketMgr.calculateParams(tokens, amountsBN);
+      haircut = Number(h);
+      maxBorrow = Number(ethers.formatUnits(mb, 6));
+      divBonus = checkedCount > 1 ? (checkedCount - 1) * 1.15 : 0;
+    } catch(e) { console.error('Params calc error:', e); }
+  }
+
+  document.getElementById('basket-summary').innerHTML = `
+    <div class="summary-row"><span class="label">Basket Value</span><span class="value">$${totalValue.toLocaleString('en-US',{minimumFractionDigits:2})}</span></div>
+    <div class="summary-row"><span class="label">Portfolio Haircut</span><span class="value">${(haircut/100).toFixed(2)}%</span></div>
+    <div class="summary-row"><span class="label">Diversification Bonus</span><span class="value" style="color:var(--green);">−${divBonus.toFixed(2)}% (${checkedCount} assets)</span></div>
+    <div class="summary-divider"></div>
+    <div class="summary-row highlight"><span class="label">Max Borrowing Power</span><span class="value">$${maxBorrow.toLocaleString('en-US',{minimumFractionDigits:2})}</span></div>
+  `;
+}
+
+// ════════════════════════════════════════
+// PB: MARKET + PROPOSE
+// ════════════════════════════════════════
+async function loadMarket() {
+  // For demo, show known wallets as lenders
+  const lenders = [
+    {addr:"0x3FB2d86389bea9f673F6Fc9d9FD4AE549A2f2eB1",name:"Citadel Capital",color:"var(--green)",initials:"CC"},
+    {addr:"0x6F217c0bA23D54330E38A9Ee917455659e4d597d",name:"Jupiter MMF",color:"var(--blue)",initials:"JM"},
+  ];
+  let html = '';
+  for (const l of lenders) {
+    const usdcBal = await contracts.usdc.balanceOf(l.addr);
+    const avail = Number(ethers.formatUnits(usdcBal, 6));
+    html += `<div class="lender-card" onclick="selectLender(this,'${l.addr}','${l.name}')">
+      <div class="lender-avatar" style="background:${l.color};">${l.initials}</div>
+      <div class="lender-info"><div class="lender-name">${l.name}</div><div class="lender-detail">${l.addr.slice(0,10)}...</div></div>
+      <div style="text-align:right"><div style="font-family:var(--mono);font-size:14px;">$${avail.toLocaleString()} USDC</div></div>
+    </div>`;
+  }
+  document.getElementById('lender-list').innerHTML = html;
+}
+
+function selectLender(el, addr, name) {
+  document.querySelectorAll('.lender-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedLender = addr;
+  const btn = document.getElementById('propose-btn');
+  btn.disabled = false;
+  btn.textContent = `Request Financing from ${name} →`;
+}
+
+async function proposeRepo() {
+  const btn = document.getElementById('propose-btn');
+  btn.disabled = true; btn.classList.add('loading');
+  try {
+    // 1. Ensure approvals
+    for (let i = 0; i < currentBasketTokens.length; i++) {
+      const token = new ethers.Contract(currentBasketTokens[i], ABI_ERC20, signer);
+      const allowance = await token.allowance(userAddr, C.RepoServicer);
+      if (allowance === 0n) {
+        toast('Approving ' + C.securities.find(s=>s.addr===currentBasketTokens[i]).symbol + '...', 'warning');
+        const tx = await token.approve(C.RepoServicer, ethers.MaxUint256);
+        await tx.wait();
+      }
+    }
+
+    // 2. Create basket
+    const amountsBN = currentBasketAmounts.map(a => ethers.parseEther(a.toString()));
+    toast('Creating basket...', 'warning');
+    const txB = await contracts.basketMgr.createBasket(currentBasketTokens, amountsBN);
+    await txB.wait();
+    const nextId = await contracts.basketMgr.nextBasketId();
+    currentBasketId = Number(nextId) - 1;
+
+    // 3. Propose
+    const rate = parseInt(document.getElementById('repo-rate').value);
+    const amount = parseInt(document.getElementById('borrow-amount').value);
+    const amountBN = ethers.parseUnits(amount.toString(), 6);
+    toast('Proposing repo...', 'warning');
+    const txP = await contracts.servicer.proposeRepo(currentBasketId, amountBN, rate, 30, selectedLender);
+    await txP.wait();
+    const nextRepoId = await contracts.servicer.nextRepoId();
+    baseRepoId = Number(nextRepoId) - 1;
+
+    toast(`Repo #${baseRepoId} proposed! Waiting for lender to accept.`, 'success');
+    addTimeline(`Repo #${baseRepoId} proposed. Basket #${currentBasketId}. Awaiting lender acceptance.`, 'var(--green)');
+
+  } catch(e) { console.error(e); toast('Error: ' + (e.reason||e.message), 'danger'); }
+  btn.disabled = false; btn.classList.remove('loading');
+}
+
+// ════════════════════════════════════════
+// PB: DASHBOARD
+// ════════════════════════════════════════
+async function openDashboard(repoId) {
+  baseRepoId = repoId;
+  showScreen('pb-dashboard');
+  await refreshDashboard(repoId);
+}
+
+async function refreshDashboard(repoId) {
+  const state = Number(await contracts.servicer.getRepoState(repoId));
+  const [principal, rate, maturityDate, basketId] = await contracts.servicer.getRepoTerms(repoId);
+  let health = 0;
+  try { health = Number(await contracts.servicer.getMarginHealth(repoId)); } catch(e) {}
+  const interest = await contracts.servicer.calculateAccruedInterest(repoId);
+  const mfg = await contracts.servicer.getMfgPaymentCredit(repoId);
+
+  document.getElementById('dash-title').textContent = `Repo #${repoId}`;
+  document.getElementById('dash-subtitle').textContent = `Basket #${basketId}`;
+
+  const statusEl = document.getElementById('dash-status');
+  statusEl.className = 'repo-status ' + STATE_CLASS[state];
+  statusEl.innerHTML = `<span class="status-dot"></span> ${STATES[state]}`;
+
+  // Basket
+  try {
+    const [tokens, amounts] = await contracts.basketMgr.getBasket(Number(basketId));
+    let basketHtml = '';
+    for (let i = 0; i < tokens.length; i++) {
+      const sec = C.securities.find(s => s.addr.toLowerCase() === tokens[i].toLowerCase());
+      const shares = Number(ethers.formatEther(amounts[i]));
+      const price = Number(await contracts.priceFeed.getPrice(tokens[i])) / 1e8;
+      basketHtml += `<div style="display:flex;justify-content:space-between;font-size:14px;padding:4px 0;">
+        <span><span style="font-family:var(--mono);font-weight:600;">${sec?.symbol||'?'}</span> × ${shares}</span>
+        <span style="font-family:var(--mono);">$${(shares*price).toLocaleString('en-US',{minimumFractionDigits:2})}</span>
+      </div>`;
+    }
+    const bv = await contracts.basketMgr.getBasketValue(Number(basketId));
+    basketHtml += `<div style="border-top:1px solid var(--border);padding-top:8px;margin-top:8px;display:flex;justify-content:space-between;font-weight:700;">
+      <span>Total</span><span style="font-family:var(--mono);">$${Number(ethers.formatUnits(bv,6)).toLocaleString('en-US',{minimumFractionDigits:2})}</span>
+    </div>`;
+    document.getElementById('dash-basket').innerHTML = basketHtml;
+  } catch(e) { document.getElementById('dash-basket').innerHTML = 'Error loading basket'; }
+
+  // Terms
+  document.getElementById('dash-terms').innerHTML = `
+    <div class="summary-row"><span class="label">Principal</span><span class="value">$${Number(ethers.formatUnits(principal,6)).toLocaleString()}</span></div>
+    <div class="summary-row"><span class="label">Repo Rate</span><span class="value">${Number(rate)/100}%</span></div>
+    <div class="summary-row"><span class="label">Accrued Interest</span><span class="value" style="color:var(--yellow);">$${Number(ethers.formatUnits(interest,6)).toFixed(2)}</span></div>
+    <div class="summary-row"><span class="label">Mfg Payment Credit</span><span class="value" style="color:var(--green);">−$${Number(ethers.formatUnits(mfg,6)).toFixed(2)}</span></div>
+  `;
+
+  // Gauge
+  const pct = Math.min(100, health / 100);
+  document.getElementById('dash-health-pct').textContent = pct.toFixed(1) + '%';
+  document.getElementById('dash-health-pct').style.color = health < 4000 ? 'var(--red)' : health < 6000 ? 'var(--yellow)' : 'var(--green)';
+  const gauge = document.getElementById('dash-gauge');
+  gauge.style.width = pct + '%';
+  gauge.style.background = health < 4000 ? 'var(--red)' : health < 6000 ? 'var(--yellow)' : 'linear-gradient(90deg,var(--red),var(--yellow),var(--green))';
+
+  // Buttons
+  const topupBtn = document.getElementById('topup-btn');
+  const settleBtn = document.getElementById('settle-btn');
+  topupBtn.disabled = state !== 2; topupBtn.style.opacity = state === 2 ? '1' : '0.3';
+  settleBtn.disabled = state !== 3; settleBtn.style.opacity = state === 3 ? '1' : '0.3';
+  if (state === 3) settleBtn.textContent = 'Settle Repo';
+  if (state >= 4) {
+    document.getElementById('dash-actions').innerHTML = `<div class="repo-status settled" style="font-size:14px;padding:8px 16px;"><span class="status-dot"></span> ${STATES[state]}</div>`;
+  }
+
+  // Timeline
+  renderTimeline();
+}
+
+// ════════════════════════════════════════
+// CL: VIEWS
+// ════════════════════════════════════════
+async function loadCLView() {
+  // Check if there are proposals for this lender
+  const nextRepo = Number(await contracts.servicer.nextRepoId());
+  let hasActive = false;
+
+  for (let i = 1; i < nextRepo; i++) {
+    const state = Number(await contracts.servicer.getRepoState(i));
+    const [principal, rate, maturity, basketId] = await contracts.servicer.getRepoTerms(i);
+    if (state >= 1) hasActive = true; // any non-proposed = we've interacted
+  }
+
+  if (hasActive) {
+    await loadCLPortfolio();
+    showScreen('cl-portfolio');
+  } else {
+    await loadCLInbox();
+    showScreen('cl-inbox');
+  }
+}
+
+async function loadCLInbox() {
+  const div = document.getElementById('cl-proposals');
+  const nextRepo = Number(await contracts.servicer.nextRepoId());
+  let html = '';
+
+  for (let i = 1; i < nextRepo; i++) {
+    const state = Number(await contracts.servicer.getRepoState(i));
+    if (state !== 0) continue; // only Proposed
+    const [principal, rate, maturity, basketId] = await contracts.servicer.getRepoTerms(i);
+    const [tokens, amounts] = await contracts.basketMgr.getBasket(Number(basketId));
+
+    let basketStr = '';
+    for (let j = 0; j < tokens.length; j++) {
+      const sec = C.securities.find(s => s.addr.toLowerCase() === tokens[j].toLowerCase());
+      basketStr += `${sec?.symbol} × ${Number(ethers.formatEther(amounts[j]))}  `;
+    }
+
+    html += `<div class="card" style="border-left:3px solid var(--green);">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div style="font-size:15px;font-weight:600;">Repo #${i} — New Proposal</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:4px;">Basket: ${basketStr}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-family:var(--mono);font-size:20px;font-weight:700;">$${Number(ethers.formatUnits(principal,6)).toLocaleString()}</div>
+          <div style="font-size:12px;color:var(--text2);">${Number(rate)/100}%</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:14px;">
+        <button class="btn btn-primary btn-sm" onclick="acceptRepoAsCL(${i})">Accept</button>
+        <button class="btn btn-secondary btn-sm" disabled>Decline</button>
+      </div>
+    </div>`;
+  }
+  if (!html) html = '<div class="card" style="text-align:center;color:var(--text3);padding:32px;">No pending proposals</div>';
+  div.innerHTML = html;
+}
+
+async function acceptRepoAsCL(repoId) {
+  try {
+    toast('Accepting repo — title transfer in progress...', 'warning');
+    const tx = await contracts.servicer.acceptRepo(repoId);
+    await tx.wait();
+    toast('Repo accepted! Securities transferred. RT minted.', 'success');
+    addTimeline(`Repo #${repoId} accepted. Title transfer complete. RT minted.`, 'var(--green)');
+    await loadCLPortfolio();
+    showScreen('cl-portfolio');
+  } catch(e) { console.error(e); toast('Error: '+(e.reason||e.message),'danger'); }
+}
+
+async function loadCLPortfolio() {
+  const div = document.getElementById('cl-positions');
+  const nextToken = Number(await contracts.repoToken.nextTokenId());
+  let html = '';
+
+  for (let t = 1; t < nextToken; t++) {
+    try {
+      const owner = await contracts.repoToken.ownerOf(t);
+      if (owner.toLowerCase() !== userAddr) continue;
+      const info = await contracts.repoToken.getRepoTokenInfo(t);
+      const repoState = Number(await contracts.servicer.getRepoState(Number(info[0])));
+      const isRehypoAvail = await contracts.repoToken.isRehypoAvailable(t);
+
+      html += `<div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:15px;font-weight:600;">RepoToken #${t}</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:4px;">Repo #${info[0]} · $${Number(ethers.formatUnits(info[1],6)).toLocaleString()} principal</div>
+          </div>
+          <div class="repo-status ${STATE_CLASS[repoState]}"><span class="status-dot"></span> ${STATES[repoState]}</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:14px;">
+          <button class="btn btn-primary btn-sm" style="background:var(--purple);" ${!isRehypoAvail?'disabled style="opacity:0.3"':''} onclick="showRehypoForm(${t})">
+            ${isRehypoAvail ? 'Rehypothecate' : 'Pledged'}
+          </button>
+        </div>
+      </div>`;
+    } catch(e) {} // token might be burned
+  }
+
+  // Check for active rehypo (CL as borrower)
+  const repoIds = await contracts.servicer.getReposByBorrower(userAddr);
+  for (const id of repoIds) {
+    const state = Number(await contracts.servicer.getRepoState(id));
+    if (state === 3) { // Matured
+      html += `<div class="card" style="border-left:3px solid var(--purple);">
+        <div style="font-size:15px;font-weight:600;">Rehypo #${id} — Matured</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:4px;">Ready to repay</div>
+        <button class="btn btn-primary btn-sm" style="margin-top:12px;background:var(--purple);" onclick="settleRehypoAsCL(${id})">Repay Rehypo</button>
+      </div>`;
+    } else if (state === 1) { // Active
+      html += `<div class="card" style="border-left:3px solid var(--purple);">
+        <div style="font-size:15px;font-weight:600;">Rehypo #${id} — Active</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:4px;">Use Time Warp in Control Panel to mature</div>
+      </div>`;
+    } else if (state === 4) {
+      html += `<div class="card" style="border-left:3px solid var(--green);">
+        <div style="font-size:15px;font-weight:600;">Rehypo #${id} — Settled ✓</div>
+      </div>`;
+    }
+  }
+
+  if (!html) html = '<div class="card" style="text-align:center;color:var(--text3);padding:32px;">No positions</div>';
+  div.innerHTML = html;
+}
+
+function showRehypoForm(tokenId) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.onclick = e => { if(e.target===overlay) overlay.remove(); };
+  overlay.innerHTML = `<div class="modal">
+    <div class="modal-title" style="color:var(--purple);">Rehypothecate RT #${tokenId}</div>
+    <div class="rehypo-cap">⚠ SEC Rule 15c3-3: Max rehypo = 140% of borrower's indebtedness</div>
+    <div class="input-group">
+      <div class="input-label">Borrow Amount (USDC)</div>
+      <input type="number" class="input-field" id="rehypo-amount" value="500" style="font-family:var(--mono)">
+    </div>
+    <div class="input-group">
+      <div class="input-label">Lender Address</div>
+      <select class="input-field" id="rehypo-lender">
+        <option value="0x6F217c0bA23D54330E38A9Ee917455659e4d597d">Jupiter MMF</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn btn-primary btn-block" style="background:var(--purple);" onclick="submitRehypo(${tokenId},this)">Submit Rehypo</button>
+      <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+
+async function submitRehypo(tokenId, btn) {
+  btn.disabled = true;
+  try {
+    const amount = parseInt(document.getElementById('rehypo-amount').value);
+    const lender = document.getElementById('rehypo-lender').value;
+    const amountBN = ethers.parseUnits(amount.toString(), 6);
+
+    toast('Proposing rehypo...', 'warning');
+    const tx = await contracts.servicer.proposeRehypo(tokenId, amountBN, 520, 14, lender);
+    await tx.wait();
+    const nextId = Number(await contracts.servicer.nextRepoId()) - 1;
+    rehypoRepoId = nextId;
+
+    toast(`Rehypo #${nextId} proposed! Waiting for Jupiter to accept.`, 'success');
+    addTimeline(`Rehypo #${nextId} proposed. RT #${tokenId} as collateral.`, 'var(--purple)');
+    btn.closest('.modal-overlay').remove();
+    await loadCLPortfolio();
+  } catch(e) { console.error(e); toast('Error: '+(e.reason||e.message),'danger'); btn.disabled=false; }
+}
+
+async function settleRehypoAsCL(repoId) {
+  try {
+    toast('Settling rehypo...', 'warning');
+    const tx = await contracts.servicer.settleRehypo(repoId);
+    await tx.wait();
+    toast('Rehypo settled! RT returned.', 'success');
+    addTimeline(`Rehypo #${repoId} settled.`, 'var(--purple)');
+    await loadCLPortfolio();
+  } catch(e) { console.error(e); toast('Error: '+(e.reason||e.message),'danger'); }
+}
+
+// ════════════════════════════════════════
+// CL2: VIEWS
+// ════════════════════════════════════════
+async function loadCL2View() {
+  const nextRepo = Number(await contracts.servicer.nextRepoId());
+  let hasRehypo = false;
+
+  for (let i = 1; i < nextRepo; i++) {
+    const state = Number(await contracts.servicer.getRepoState(i));
+    const lenderRepos = await contracts.servicer.getReposByLender(userAddr);
+    if (lenderRepos.includes(BigInt(i)) && state >= 1) hasRehypo = true;
+  }
+
+  if (hasRehypo) {
+    await loadCL2Portfolio();
+    showScreen('cl2-portfolio');
+  } else {
+    await loadCL2Inbox();
+    showScreen('cl2-inbox');
+  }
+}
+
+async function loadCL2Inbox() {
+  const div = document.getElementById('cl2-proposals');
+  const nextRepo = Number(await contracts.servicer.nextRepoId());
+  let html = '';
+
+  for (let i = 1; i < nextRepo; i++) {
+    const state = Number(await contracts.servicer.getRepoState(i));
+    if (state !== 0) continue;
+    const [principal, rate] = await contracts.servicer.getRepoTerms(i);
+
+    html += `<div class="card" style="border-left:3px solid var(--purple);">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div style="font-size:15px;font-weight:600;">Rehypo Proposal #${i}</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:4px;">Collateral: RepoToken (ERC-721)</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-family:var(--mono);font-size:20px;font-weight:700;">$${Number(ethers.formatUnits(principal,6)).toLocaleString()}</div>
+          <div style="font-size:12px;color:var(--text2);">${Number(rate)/100}%</div>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-sm" style="margin-top:14px;background:var(--purple);" onclick="acceptRehypoAsCL2(${i})">Accept Rehypo</button>
+    </div>`;
+  }
+  if (!html) html = '<div class="card" style="text-align:center;color:var(--text3);padding:32px;">No pending rehypo proposals</div>';
+  div.innerHTML = html;
+}
+
+async function acceptRehypoAsCL2(repoId) {
+  try {
+    toast('Accepting rehypo...', 'warning');
+    const tx = await contracts.servicer.acceptRehypo(repoId);
+    await tx.wait();
+    toast('Rehypo accepted! RT transferred, RT #2 minted.', 'success');
+    addTimeline(`Rehypo #${repoId} accepted by Jupiter.`, 'var(--purple)');
+    await loadCL2Portfolio();
+    showScreen('cl2-portfolio');
+  } catch(e) { console.error(e); toast('Error: '+(e.reason||e.message),'danger'); }
+}
+
+async function loadCL2Portfolio() {
+  const div = document.getElementById('cl2-positions');
+  const nextToken = Number(await contracts.repoToken.nextTokenId());
+  let html = '';
+
+  for (let t = 1; t < nextToken; t++) {
+    try {
+      const owner = await contracts.repoToken.ownerOf(t);
+      if (owner.toLowerCase() !== userAddr) continue;
+      const info = await contracts.repoToken.getRepoTokenInfo(t);
+      const repoState = Number(await contracts.servicer.getRepoState(Number(info[0])));
+
+      html += `<div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:15px;font-weight:600;">RepoToken #${t} ${Number(info[5])===1?'<span style="font-size:11px;color:var(--purple);background:var(--purple-dim);padding:2px 8px;border-radius:10px;">Rehypo</span>':''}</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:4px;">$${Number(ethers.formatUnits(info[1],6)).toLocaleString()} principal</div>
+          </div>
+          <div class="repo-status ${STATE_CLASS[repoState]}"><span class="status-dot"></span> ${STATES[repoState]}</div>
+        </div>
+      </div>`;
+    } catch(e) {}
+  }
+  if (!html) html = '<div class="card" style="text-align:center;color:var(--text3);padding:32px;">No positions</div>';
+  div.innerHTML = html;
+}
+
+// ════════════════════════════════════════
+// CONTROL PANEL
+// ════════════════════════════════════════
+async function initControlPanel() {
+  const div = document.getElementById('price-controls');
+  let html = '';
+  for (const sec of C.securities) {
+    const price = Number(await contracts.priceFeed.getPrice(sec.addr)) / 1e8;
+    html += `<div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;" data-price-addr="${sec.addr}">
+      <span style="font-family:var(--mono);width:50px;">${sec.symbol}</span>
+      <span style="font-family:var(--mono);color:var(--text2);" id="cp-price-${sec.symbol}">$${price.toFixed(2)}</span>
+      <div style="display:flex;gap:4px;">
+        <button class="btn btn-sm btn-secondary" onclick="adjustPrice('${sec.addr}','${sec.symbol}',-20)" style="padding:4px 8px;font-size:11px;">-20%</button>
+        <button class="btn btn-sm btn-secondary" onclick="adjustPrice('${sec.addr}','${sec.symbol}',20)" style="padding:4px 8px;font-size:11px;">+20%</button>
+      </div>
+    </div>`;
+  }
+  div.innerHTML = html;
+
+  // Dividend dropdown
+  const sel = document.getElementById('div-ticker');
+  sel.innerHTML = C.securities.map(s => `<option value="${s.addr}">${s.symbol}</option>`).join('');
+}
+
+function toggleControlPanel() {
+  const cp = document.getElementById('control-panel');
+  cp.style.display = cp.style.display === 'none' ? 'block' : 'none';
+}
+
+async function adjustPrice(addr, symbol, pctChange) {
+  try {
+    const currentPrice = Number(await contracts.priceFeed.getPrice(addr));
+    const newPrice = Math.round(currentPrice * (1 + pctChange / 100));
+    toast(`Setting ${symbol} price ${pctChange > 0 ? '↑' : '↓'}${Math.abs(pctChange)}%...`, 'warning');
+    const tx = await contracts.priceFeed.setPrice(addr, newPrice);
+    await tx.wait();
+    document.getElementById('cp-price-' + symbol).textContent = '$' + (newPrice / 1e8).toFixed(2);
+    toast(`${symbol} price updated to $${(newPrice / 1e8).toFixed(2)}`, pctChange > 0 ? 'success' : 'danger');
+
+    // Auto check margin if repo is active
+    if (baseRepoId > 0) {
+      try {
+        const state = Number(await contracts.servicer.getRepoState(baseRepoId));
+        if (state === 1) {
+          const tx2 = await contracts.servicer.checkMargin(baseRepoId);
+          await tx2.wait();
+          const newState = Number(await contracts.servicer.getRepoState(baseRepoId));
+          if (newState === 2) {
+            toast('⚠ MARGIN CALL triggered!', 'danger');
+            addTimeline('Margin call triggered after price change.', 'var(--red)');
+          }
+        }
+      } catch(e) {}
+      if (document.getElementById('pb-dashboard').classList.contains('active')) {
+        await refreshDashboard(baseRepoId);
+      }
+    }
+  } catch(e) { console.error(e); toast('Error: '+(e.reason||e.message),'danger'); }
+}
+
+async function triggerDividend() {
+  try {
+    if (baseRepoId === 0) { toast('No active repo', 'danger'); return; }
+    const tokenAddr = document.getElementById('div-ticker').value;
+    const amount = parseFloat(document.getElementById('div-amount').value);
+    const amountBN = ethers.parseUnits(amount.toFixed(6), 6);
+    const sec = C.securities.find(s => s.addr === tokenAddr);
+
+    toast(`Distributing ${sec.symbol} dividend $${amount}/share...`, 'warning');
+    const tx = await contracts.servicer.distributeDividend(baseRepoId, tokenAddr, amountBN);
+    await tx.wait();
+    toast(`Dividend distributed! Mfg payment credit recorded.`, 'success');
+    addTimeline(`${sec.symbol} dividend $${amount}/share. Manufactured payment credit recorded.`, 'var(--blue)');
+
+    if (document.getElementById('pb-dashboard').classList.contains('active')) {
+      await refreshDashboard(baseRepoId);
+    }
+  } catch(e) { console.error(e); toast('Error: '+(e.reason||e.message),'danger'); }
+}
+
+async function warpMaturity(repoId) {
+  try {
+    const id = repoId === 1 ? baseRepoId : rehypoRepoId;
+    if (id === 0) { toast('No repo to warp', 'danger'); return; }
+    const block = await provider.getBlock('latest');
+    const now = block.timestamp;
+
+    toast(`Setting Repo #${id} maturity to now...`, 'warning');
+    const tx1 = await contracts.servicer.debugSetMaturity(id, now);
+    await tx1.wait();
+
+    toast('Checking maturity...', 'warning');
+    try {
+      const tx2 = await contracts.servicer.checkMaturity(id);
+      await tx2.wait();
+      toast(`Repo #${id} matured!`, 'success');
+      addTimeline(`Repo #${id} maturity reached.`, 'var(--green)');
+    } catch(e) {
+      // Might already be matured
+      toast(`Repo #${id} ready for settlement.`, 'success');
+    }
+
+    // Refresh current view
+    if (document.getElementById('pb-dashboard').classList.contains('active')) {
+      await refreshDashboard(baseRepoId);
+    }
+    if (document.getElementById('cl-portfolio').classList.contains('active')) {
+      await loadCLPortfolio();
+    }
+  } catch(e) { console.error(e); toast('Error: '+(e.reason||e.message),'danger'); }
+}
+
+// ════════════════════════════════════════
+// TOP UP MODAL
+// ════════════════════════════════════════
+function showTopUpModal() {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.onclick = e => { if(e.target===overlay) overlay.remove(); };
+  overlay.innerHTML = `<div class="modal">
+    <div class="modal-title">Top Up Collateral</div>
+    <div class="input-group">
+      <div class="input-label">Security</div>
+      <select class="input-field" id="topup-token">${C.securities.map(s=>`<option value="${s.addr}">${s.symbol}</option>`).join('')}</select>
+    </div>
+    <div class="input-group">
+      <div class="input-label">Additional Shares</div>
+      <input type="number" class="input-field" id="topup-shares" value="1" style="font-family:var(--mono)">
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn btn-primary btn-block" onclick="executeTopUp(this)">Confirm Top Up</button>
+      <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+
+async function executeTopUp(btn) {
+  btn.disabled = true;
+  try {
+    const token = document.getElementById('topup-token').value;
+    const shares = parseInt(document.getElementById('topup-shares').value);
+    const amountBN = ethers.parseEther(shares.toString());
+
+    toast('Topping up collateral...', 'warning');
+    const tx = await contracts.servicer.topUpCollateral(baseRepoId, token, amountBN);
+    await tx.wait();
+
+    const sec = C.securities.find(s => s.addr === token);
+    toast(`Added ${shares} ${sec.symbol}. Margin restored.`, 'success');
+    addTimeline(`Top up: +${shares} ${sec.symbol}.`, 'var(--green)');
+    btn.closest('.modal-overlay').remove();
+    await refreshDashboard(baseRepoId);
+  } catch(e) { console.error(e); toast('Error: '+(e.reason||e.message),'danger'); btn.disabled=false; }
+}
+
+// ════════════════════════════════════════
+// SETTLEMENT MODAL
+// ════════════════════════════════════════
+async function showSettlementModal() {
+  try {
+    const [principal, interest, mfgCredit, netPayment] = await contracts.servicer.calculateSettlement(baseRepoId);
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.onclick = e => { if(e.target===overlay) overlay.remove(); };
+    overlay.innerHTML = `<div class="modal">
+      <div class="modal-title">Settlement — Repo #${baseRepoId}</div>
+      <div class="summary" style="background:var(--surface3);">
+        <div class="summary-row"><span class="label">Principal</span><span class="value">$${Number(ethers.formatUnits(principal,6)).toLocaleString()}</span></div>
+        <div class="summary-row"><span class="label">+ Interest</span><span class="value">$${Number(ethers.formatUnits(interest,6)).toFixed(2)}</span></div>
+        <div class="summary-row"><span class="label">− Mfg Payment</span><span class="value" style="color:var(--green);">−$${Number(ethers.formatUnits(mfgCredit,6)).toFixed(2)}</span></div>
+        <div class="summary-divider"></div>
+        <div class="summary-row highlight"><span class="label">Net Payment</span><span class="value">$${Number(ethers.formatUnits(netPayment,6)).toLocaleString('en-US',{minimumFractionDigits:2})}</span></div>
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin:12px 0;">Securities return to your wallet. RepoToken burns.</div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary btn-block" onclick="executeSettlement(this)">Confirm Settlement</button>
+        <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+      </div>
+    </div>`;
+    document.body.appendChild(overlay);
+  } catch(e) { console.error(e); toast('Error: '+(e.reason||e.message),'danger'); }
+}
+
+async function executeSettlement(btn) {
+  btn.disabled = true;
+  try {
+    toast('Settling repo...', 'warning');
+    const tx = await contracts.servicer.settleRepo(baseRepoId);
+    await tx.wait();
+    toast('Repo settled! Securities returned.', 'success');
+    addTimeline(`Repo #${baseRepoId} settled. Securities returned. RT burned.`, 'var(--green)');
+    btn.closest('.modal-overlay').remove();
+    await refreshDashboard(baseRepoId);
+  } catch(e) { console.error(e); toast('Error: '+(e.reason||e.message),'danger'); btn.disabled=false; }
+}
+
+// ════════════════════════════════════════
+// TIMELINE
+// ════════════════════════════════════════
+function addTimeline(text, color) {
+  const now = new Date();
+  const time = now.toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',hour12:false}) + ' UTC';
+  timelineEvents.unshift({ text, color, time });
+  renderTimeline();
+}
+
+function renderTimeline() {
+  const div = document.getElementById('dash-timeline');
+  if (!div) return;
+  div.innerHTML = timelineEvents.map(e => `
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background:${e.color}"></div>
+      <div><div>${e.text}</div><div class="timeline-time">${e.time}</div></div>
+    </div>
+  `).join('');
+}
+
+// ════════════════════════════════════════
+// UTILS
+// ════════════════════════════════════════
+function toast(msg, type) {
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `${type==='success'?'✓':type==='danger'?'✕':'⚠'} ${msg}`;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// Auto-show market when navigating to it
+const origShowScreen = showScreen;
+showScreen = async function(id) {
+  origShowScreen(id);
+  if (id === 'pb-market') await loadMarket();
+};
+</script>
+</body>
+</html>
