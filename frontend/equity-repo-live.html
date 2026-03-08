@@ -307,6 +307,10 @@ body { font-family:var(--font); background:var(--bg); color:var(--text); min-hei
       <div class="section-title">My Positions</div>
       <div class="section-subtitle">Active repos and RepoTokens</div>
     </div>
+    <div style="text-align:right;">
+      <div style="font-size:13px;color:var(--text3);">Available USDC</div>
+      <div style="font-size:20px;font-weight:700;font-family:var(--mono);color:var(--green);" id="cl-usdc-balance">—</div>
+    </div>
   </div>
   <div id="cl-positions"></div>
 </div>
@@ -329,6 +333,10 @@ body { font-family:var(--font); background:var(--bg); color:var(--text); min-hei
       <div class="section-title">My Positions</div>
       <div class="section-subtitle">Rehypo positions</div>
     </div>
+    <div style="text-align:right;">
+      <div style="font-size:13px;color:var(--text3);">Available USDC</div>
+      <div style="font-size:20px;font-weight:700;font-family:var(--mono);color:var(--green);" id="cl2-usdc-balance">—</div>
+    </div>
   </div>
   <div id="cl2-positions"></div>
 </div>
@@ -345,12 +353,12 @@ const C = {
   AMD:"0x71178BAc73cBeb415514eB542a8995b82669778d",
   NFLX:"0x3b8262A63d25f0477c4DDE23F83cfe22Cb768C93",
   PLTR:"0x1FBE1a0e43594b3455993B5dE5Fd0A7A266298d0",
-  USDC:"0x2490329a6c4b8FB76dA3949A58F4d5A5DA084196",
-  PriceFeed:"0x862EA42EF2A6E2Ecc6F14A2Fd8C75CaC0960f7f5",
-  BasketManager:"0xecA4c967c0E67b5FB5d97b5703f3B68e8beb7277",
-  RepoToken:"0xfa8209cD0DD34B9bB434DB0D4c979D2166032203",
-  RepoMarket:"0xE57afa43F0AAf01b7974463f20eb84E8028501E6",
-  RepoServicer:"0xa6171F5C434f5EA5135fBc24Eb92bbd6D530af06",
+  USDC:"0x7B44d68015E31B647d1719Df52B37dF392621186",
+  PriceFeed:"0x712F5833EdE96f6E2fFDA5f2eac4B5509E18DF08",
+  BasketManager:"0x06291Aac93CBaaf332256F9F874698eFE25caa1E",
+  RepoToken:"0x7bbD046e69F7BE03E4b7DC50e421541E9f787aF1",
+  RepoMarket:"0xd49c0A7adA0199b8c20AD19Ae9D3688D6AcbcD19",
+  RepoServicer:"0xCB8F577d61Ff3075568303283C76518eF254fAc6",
   wallets:{
     "0x0d781453255a7dbdf7f431cbcb956733173898b5":"Prime Broker",
     "0x3fb2d86389bea9f673f6fc9d9fd4ae549a2f2eb1":"Citadel Capital",
@@ -369,7 +377,7 @@ C.securities = [
 const ABI_ERC20=["function balanceOf(address) view returns (uint256)","function approve(address,uint256)","function allowance(address,address) view returns (uint256)"];
 const ABI_PF=["function getPrice(address) view returns (uint256)","function setPrice(address,uint256)","function getBasketValue(address[],uint256[]) view returns (uint256)"];
 const ABI_BM=["function createBasket(address[],uint256[]) returns (uint256)","function getBasket(uint256) view returns (address[],uint256[],address)","function getBasketValue(uint256) view returns (uint256)","function calculateParams(address[],uint256[]) view returns (uint256,uint256,uint256)","function nextBasketId() view returns (uint256)"];
-const ABI_RS=["function proposeRepo(uint256,uint256,uint256,uint256,address) returns (uint256)","function acceptRepo(uint256)","function distributeDividend(uint256,address,uint256)","function checkMargin(uint256)","function topUpCollateral(uint256,address,uint256)","function checkMaturity(uint256)","function settleRepo(uint256)","function proposeRehypo(uint256,uint256,uint256,uint256,address) returns (uint256)","function acceptRehypo(uint256)","function settleRehypo(uint256)","function debugSetMaturity(uint256,uint256)","function getRepoState(uint256) view returns (uint8)","function getRepoTerms(uint256) view returns (uint256,uint256,uint256,uint256)","function calculateAccruedInterest(uint256) view returns (uint256)","function getMfgPaymentCredit(uint256) view returns (uint256)","function calculateSettlement(uint256) view returns (uint256,uint256,uint256,uint256)","function getMarginHealth(uint256) view returns (uint256)","function getMaturityDate(uint256) view returns (uint256)","function getRehypoCap(uint256) view returns (uint256)","function getReposByBorrower(address) view returns (uint256[])","function getReposByLender(address) view returns (uint256[])","function nextRepoId() view returns (uint256)"];
+const ABI_RS=["function proposeRepo(uint256,uint256,uint256,uint256,address) returns (uint256)","function acceptRepo(uint256)","function distributeDividend(uint256,address,uint256)","function checkMargin(uint256)","function topUpCollateral(uint256,address,uint256)","function checkMaturity(uint256)","function settleRepo(uint256)","function proposeRehypo(uint256,uint256,uint256,uint256,address) returns (uint256)","function acceptRehypo(uint256)","function settleRehypo(uint256)","function debugSetMaturity(uint256,uint256)","function debugSetStartDate(uint256,uint256)","function getRepoState(uint256) view returns (uint8)","function getRepoTerms(uint256) view returns (uint256,uint256,uint256,uint256)","function calculateAccruedInterest(uint256) view returns (uint256)","function getMfgPaymentCredit(uint256) view returns (uint256)","function calculateSettlement(uint256) view returns (uint256,uint256,uint256,uint256)","function getMarginHealth(uint256) view returns (uint256)","function getMaturityDate(uint256) view returns (uint256)","function getRehypoCap(uint256) view returns (uint256)","function getReposByBorrower(address) view returns (uint256[])","function getReposByLender(address) view returns (uint256[])","function nextRepoId() view returns (uint256)"];
 const ABI_RT=["function ownerOf(uint256) view returns (address)","function getRepoTokenInfo(uint256) view returns (tuple(uint256,uint256,uint256,uint256,uint256,uint8,uint256,bool))","function isRehypoAvailable(uint256) view returns (bool)","function nextTokenId() view returns (uint256)","function setApprovalForAll(address,bool)","function isApprovedForAll(address,address) view returns (bool)"];
 const ABI_MKT=["function registerLender(uint256,uint256)","function getActiveLenders() view returns (address[])","function getLenderTerms(address) view returns (uint256,uint256)","function getLenderStats(address) view returns (uint256,uint256)","function getProposalsForLender(address) view returns (uint256[])"];
 
@@ -673,7 +681,7 @@ async function proposeRepo() {
     for (let i = 0; i < currentBasketTokens.length; i++) {
       const token = new ethers.Contract(currentBasketTokens[i], ABI_ERC20, signer);
       const allowance = await token.allowance(userAddr, C.RepoServicer);
-      if (allowance === 0n) {
+      if (allowance < ethers.MaxUint256 / 2n) {
         toast('Approving ' + C.securities.find(s=>s.addr===currentBasketTokens[i]).symbol + '...', 'warning');
         const tx = await token.approve(C.RepoServicer, ethers.MaxUint256);
         await tx.wait();
@@ -700,6 +708,11 @@ async function proposeRepo() {
 
     toast(`Repo #${baseRepoId} proposed! Waiting for lender to accept.`, 'success');
     addTimeline(`Repo #${baseRepoId} proposed. Basket #${currentBasketId}. Awaiting lender acceptance.`, 'var(--green)');
+
+    // Navigate to portfolio to see the proposed repo
+    await loadPBPortfolio();
+    showScreen('pb-portfolio');
+    return;
 
   } catch(e) { console.error(e); toast('Error: ' + (e.reason||e.message), 'danger'); }
   btn.disabled = false; btn.classList.remove('loading');
@@ -798,6 +811,12 @@ async function loadCLPortfolio() {
   const nextToken = Number(await contracts.repoToken.nextTokenId());
   let html = '';
 
+  // Load USDC balance
+  try {
+    const usdcBal = await contracts.usdc.balanceOf(userAddr);
+    document.getElementById('cl-usdc-balance').textContent = '$' + Number(ethers.formatUnits(usdcBal, 6)).toLocaleString('en-US', {minimumFractionDigits: 2});
+  } catch(e) {}
+
   // === Pending proposals (state=0, where this user is the lender) ===
   let hasPending = false;
   let lenderRepos = [];
@@ -848,11 +867,11 @@ async function loadCLPortfolio() {
     const raw = await contracts.servicer.getReposByBorrower(userAddr);
     borrowerRepos = raw.map(r => Number(r));
   } catch(e) {}
-  let pendingRehypoTokens = new Set();
+  let activeRehypoCount = 0;
   for (const rid of borrowerRepos) {
     const st = Number(await contracts.servicer.getRepoState(rid));
-    if (st === 0 || st === 1) { // Proposed or Active rehypo
-      pendingRehypoTokens.add(rid); // mark as having pending rehypo
+    if (st === 0 || st === 1) { // only Proposed or Active count
+      activeRehypoCount++;
     }
   }
 
@@ -866,14 +885,9 @@ async function loadCLPortfolio() {
       if (owner.toLowerCase() !== userAddr) continue;
       const repoState = Number(await contracts.servicer.getRepoState(Number(info[0])));
       const isRehypoAvail = await contracts.repoToken.isRehypoAvailable(t);
-      // Also check if there's a pending rehypo proposal using this token
-      const hasPendingRehypo = borrowerRepos.length > 0 && !isRehypoAvail;
-      const canRehypo = isRehypoAvail && borrowerRepos.filter(async rid => {
-        return false; // simplified
-      }).length === 0;
 
-      // Simple check: if borrower has any proposed/active repos, disable rehypo
-      const rehypoDisabled = !isRehypoAvail || borrowerRepos.length > 0;
+      // Disable if RT is pledged OR there's an active/proposed rehypo
+      const rehypoDisabled = !isRehypoAvail || activeRehypoCount > 0;
 
       if (!hasTokens) {
         html += '<div style="font-size:16px;font-weight:600;margin-bottom:12px;margin-top:20px;">My RepoTokens</div>';
@@ -930,6 +944,13 @@ async function loadCLPortfolio() {
 
 async function acceptRepoAsCL(repoId) {
   try {
+    // Auto-approve USDC if needed (lender sends USDC to borrower)
+    const allowance = await contracts.usdc.allowance(userAddr, C.RepoServicer);
+    if (allowance < ethers.MaxUint256 / 2n) {
+      toast('Approving USDC...', 'warning');
+      const txA = await contracts.usdc.approve(C.RepoServicer, ethers.MaxUint256);
+      await txA.wait();
+    }
     toast('Accepting repo — title transfer in progress...', 'warning');
     const tx = await contracts.servicer.acceptRepo(repoId);
     await tx.wait();
@@ -1004,19 +1025,34 @@ async function showRTDetails(tokenId) {
   } catch(e) { console.error(e); toast('Error loading details: '+(e.reason||e.message),'danger'); }
 }
 
-function showRehypoForm(tokenId) {
+async function showRehypoForm(tokenId) {
+  // Fetch on-chain data for cap calculation
+  let rtPrincipal = 0, rehypoCap = 0;
+  try {
+    const info = await contracts.repoToken.getRepoTokenInfo(tokenId);
+    rtPrincipal = Number(ethers.formatUnits(info[1], 6));
+    const cap = await contracts.servicer.getRehypoCap(tokenId);
+    rehypoCap = Number(ethers.formatUnits(cap, 6));
+  } catch(e) { console.error(e); }
+
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.onclick = e => { if(e.target===overlay) overlay.remove(); };
   overlay.innerHTML = `<div class="modal">
     <div class="modal-title" style="color:var(--purple);">Rehypothecate RT #${tokenId}</div>
-    <div class="rehypo-cap">⚠ SEC Rule 15c3-3: Max rehypo = 140% of borrower's indebtedness</div>
-    <div class="input-group">
-      <div class="input-label">Borrow Amount (USDC)</div>
-      <input type="number" class="input-field" id="rehypo-amount" value="500" style="font-family:var(--mono)">
+    <div class="rehypo-cap">⚠ SEC Rule 15c3-3: Maximum rehypothecation = 140% of borrower's indebtedness</div>
+    <div class="summary" style="background:var(--surface3);margin-bottom:14px;">
+      <div class="summary-row"><span class="label">RT #${tokenId} Principal</span><span class="value">$${rtPrincipal.toLocaleString('en-US',{minimumFractionDigits:2})}</span></div>
+      <div class="summary-row"><span class="label">140% Cap</span><span class="value" style="color:var(--yellow);">$${rehypoCap.toLocaleString('en-US',{minimumFractionDigits:2})}</span></div>
+      <div class="summary-divider"></div>
+      <div class="summary-row highlight"><span class="label">Max Additional Borrowing</span><span class="value">$${rehypoCap.toLocaleString('en-US',{minimumFractionDigits:2})}</span></div>
     </div>
     <div class="input-group">
-      <div class="input-label">Lender Address</div>
+      <div class="input-label">Borrow Amount (USDC)</div>
+      <input type="number" class="input-field" id="rehypo-amount" value="${Math.floor(rehypoCap * 0.8)}" max="${Math.floor(rehypoCap)}" style="font-family:var(--mono)">
+    </div>
+    <div class="input-group">
+      <div class="input-label">Lender</div>
       <select class="input-field" id="rehypo-lender">
         <option value="0x6F217c0bA23D54330E38A9Ee917455659e4d597d">Jupiter MMF</option>
       </select>
@@ -1051,6 +1087,13 @@ async function submitRehypo(tokenId, btn) {
 
 async function settleRehypoAsCL(repoId) {
   try {
+    // Auto-approve USDC if needed
+    const allowance = await contracts.usdc.allowance(userAddr, C.RepoServicer);
+    if (allowance < ethers.MaxUint256 / 2n) {
+      toast('Approving USDC...', 'warning');
+      const txA = await contracts.usdc.approve(C.RepoServicer, ethers.MaxUint256);
+      await txA.wait();
+    }
     toast('Settling rehypo...', 'warning');
     const tx = await contracts.servicer.settleRehypo(repoId);
     await tx.wait();
@@ -1077,6 +1120,12 @@ async function loadCL2Portfolio() {
   const nextRepo = Number(await contracts.servicer.nextRepoId());
   const nextToken = Number(await contracts.repoToken.nextTokenId());
   let html = '';
+
+  // Load USDC balance
+  try {
+    const usdcBal = await contracts.usdc.balanceOf(userAddr);
+    document.getElementById('cl2-usdc-balance').textContent = '$' + Number(ethers.formatUnits(usdcBal, 6)).toLocaleString('en-US', {minimumFractionDigits: 2});
+  } catch(e) {}
 
   // === Pending proposals for Jupiter ===
   let lenderRepos = [];
@@ -1252,6 +1301,13 @@ async function loadCL2Portfolio() {
 
 async function acceptRehypoAsCL2(repoId) {
   try {
+    // Auto-approve USDC if needed (lender sends USDC to borrower)
+    const allowance = await contracts.usdc.allowance(userAddr, C.RepoServicer);
+    if (allowance < ethers.MaxUint256 / 2n) {
+      toast('Approving USDC...', 'warning');
+      const txA = await contracts.usdc.approve(C.RepoServicer, ethers.MaxUint256);
+      await txA.wait();
+    }
     toast('Accepting rehypo...', 'warning');
     const tx = await contracts.servicer.acceptRehypo(repoId);
     await tx.wait();
@@ -1383,7 +1439,14 @@ async function warpMaturity(type) {
     const block = await provider.getBlock('latest');
     const now = block.timestamp;
 
-    toast(`Setting Repo #${id} maturity to now...`, 'warning');
+    // Set startDate to past for realistic interest calculation
+    // Base repo: 30 days ago, Rehypo: 14 days ago
+    const daysAgo = type === 1 ? 30 : 14;
+    const pastStart = now - (daysAgo * 24 * 60 * 60);
+    toast(`Setting Repo #${id} start to ${daysAgo} days ago + maturity to now...`, 'warning');
+    const txS = await contracts.servicer.debugSetStartDate(id, pastStart);
+    await txS.wait();
+
     const tx1 = await contracts.servicer.debugSetMaturity(id, now);
     await tx1.wait();
 
@@ -1483,6 +1546,13 @@ async function showSettlementModal() {
 async function executeSettlement(btn) {
   btn.disabled = true;
   try {
+    // Auto-approve USDC if needed
+    const allowance = await contracts.usdc.allowance(userAddr, C.RepoServicer);
+    if (allowance < ethers.MaxUint256 / 2n) {
+      toast('Approving USDC...', 'warning');
+      const txA = await contracts.usdc.approve(C.RepoServicer, ethers.MaxUint256);
+      await txA.wait();
+    }
     toast('Settling repo...', 'warning');
     const tx = await contracts.servicer.settleRepo(baseRepoId);
     await tx.wait();
